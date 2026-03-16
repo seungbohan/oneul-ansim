@@ -8,7 +8,7 @@ import BigButton from '@/components/ui/BigButton'
 export default function LoginPage() {
   const router = useRouter()
   const [isRegister, setIsRegister] = useState(false)
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [mode, setMode] = useState<'elder' | 'guardian'>('elder')
@@ -20,7 +20,7 @@ export default function LoginPage() {
     setLoading(true)
 
     const result = await signIn('credentials', {
-      email,
+      username,
       password,
       redirect: false,
     })
@@ -28,7 +28,7 @@ export default function LoginPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError('이메일 또는 비밀번호가 틀렸어요')
+      setError('아이디 또는 비밀번호가 틀렸어요')
       return
     }
 
@@ -43,6 +43,14 @@ export default function LoginPage() {
       setError('이름을 입력해주세요')
       return
     }
+    if (username.length < 4) {
+      setError('아이디는 4자 이상 입력해주세요')
+      return
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setError('아이디는 영문, 숫자, 밑줄(_)만 사용할 수 있어요')
+      return
+    }
     if (password.length < 4) {
       setError('비밀번호를 4자 이상 입력해주세요')
       return
@@ -53,7 +61,7 @@ export default function LoginPage() {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name: name.trim(), mode }),
+      body: JSON.stringify({ username, password, name: name.trim(), mode }),
     })
 
     const data = await res.json()
@@ -66,7 +74,7 @@ export default function LoginPage() {
 
     // 가입 후 자동 로그인
     const result = await signIn('credentials', {
-      email,
+      username,
       password,
       redirect: false,
     })
@@ -146,7 +154,7 @@ export default function LoginPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="이름"
+              placeholder="이름 (예: 홍길동)"
               className="
                 w-full text-xl border-2 border-border rounded-2xl
                 px-5 py-4 bg-card
@@ -156,12 +164,14 @@ export default function LoginPage() {
             />
           )}
 
-          {/* 이메일 */}
+          {/* 아이디 */}
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="이메일"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+            placeholder="아이디 (영문, 숫자)"
+            autoCapitalize="none"
+            autoCorrect="off"
             required
             className="
               w-full text-xl border-2 border-border rounded-2xl
@@ -196,7 +206,7 @@ export default function LoginPage() {
             fullWidth
             type="submit"
             loading={loading}
-            disabled={!email || !password}
+            disabled={!username || !password}
           >
             {isRegister ? '가입하기' : '로그인'}
           </BigButton>

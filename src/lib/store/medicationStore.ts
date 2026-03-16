@@ -49,6 +49,7 @@ type MedicationState = {
   isTakenAlready: (medicationId: string, scheduledTime: string) => boolean
   cleanOldLogs: () => void
   syncToDb: () => void
+  resetStore: () => void
 }
 
 export const useMedicationStore = create<MedicationState>()(
@@ -123,6 +124,10 @@ export const useMedicationStore = create<MedicationState>()(
         set(state => ({
           logs: state.logs.filter(l => l.date >= cutoffStr),
         }))
+      },
+
+      resetStore: () => {
+        set({ medications: [], logs: [], dbIdMap: {} })
       },
 
       syncToDb: () => {

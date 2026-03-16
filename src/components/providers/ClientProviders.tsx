@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { SessionProvider, useSession } from 'next-auth/react'
 import { ToastProvider } from '@/components/ui/Toast'
 import { useUserStore } from '@/lib/store/userStore'
+import { useMedicationStore } from '@/lib/store/medicationStore'
 
 /** 자정이 되면 페이지를 새로고침해서 복약 현황 등을 리셋 */
 function MidnightRefresh() {
@@ -38,6 +39,7 @@ function MidnightRefresh() {
 function SessionSync() {
   const { data: session, status } = useSession()
   const { setMode, setUserName, resetStore, isOnboarded } = useUserStore()
+  const resetMedications = useMedicationStore(s => s.resetStore)
   const prevStatus = useRef(status)
 
   useEffect(() => {
@@ -55,10 +57,11 @@ function SessionSync() {
     // 로그아웃 감지 → localStorage 초기화
     if (prevStatus.current === 'authenticated' && status === 'unauthenticated') {
       resetStore()
+      resetMedications()
     }
 
     prevStatus.current = status
-  }, [status, session, setMode, setUserName, resetStore, isOnboarded])
+  }, [status, session, setMode, setUserName, resetStore, resetMedications, isOnboarded])
 
   return null
 }

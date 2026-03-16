@@ -6,16 +6,16 @@ import bcrypt from 'bcryptjs'
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
-      name: '이메일 로그인',
+      name: '아이디 로그인',
       credentials: {
-        email: { label: '이메일', type: 'email' },
+        username: { label: '아이디', type: 'text' },
         password: { label: '비밀번호', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.username || !credentials?.password) return null
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { username: credentials.username as string },
         })
 
         if (!user) return null

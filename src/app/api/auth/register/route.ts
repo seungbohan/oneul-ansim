@@ -4,19 +4,33 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, name, mode } = await req.json()
+    const { username, password, name, mode } = await req.json()
 
-    if (!email || !password || !name || !mode) {
+    if (!username || !password || !name || !mode) {
       return NextResponse.json(
         { error: '모든 항목을 입력해주세요' },
         { status: 400 }
       )
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } })
+    if (username.length < 4) {
+      return NextResponse.json(
+        { error: '아이디는 4자 이상이어야 해요' },
+        { status: 400 }
+      )
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return NextResponse.json(
+        { error: '아이디는 영문, 숫자, 밑줄(_)만 사용할 수 있어요' },
+        { status: 400 }
+      )
+    }
+
+    const existing = await prisma.user.findUnique({ where: { username } })
     if (existing) {
       return NextResponse.json(
-        { error: '이미 가입된 이메일입니다' },
+        { error: '이미 사용 중인 아이디예요' },
         { status: 409 }
       )
     }
@@ -25,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.create({
       data: {
-        email,
+        username,
         password: hashedPassword,
         name,
         mode,
@@ -35,13 +49,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       id: user.id,
-      email: user.email,
+      username: user.username,
       name: user.name,
       mode: user.mode,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.error('회원가입 오류:', message, error)
+    console.error('회원가입 오류:', message)
     return NextResponse.json(
       { error: `회원가입 실패: ${message}` },
       { status: 500 }
