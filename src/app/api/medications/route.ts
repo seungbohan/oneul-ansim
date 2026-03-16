@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// POST: 약 등록 또는 전체 동기화
+// POST: 약 동기화 (upsert 방식 - 로그 보존)
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
@@ -24,16 +24,34 @@ export async function POST(req: NextRequest) {
         color: string
       }[] = body.medications || []
 
-      // 기존 약 모두 삭제 후 다시 넣기 (간단한 동기화)
-      // 먼저 로그 삭제 (FK 때문에), 그 다음 약 삭제
-      await prisma.medicationLog.deleteMany({ where: { userId } })
-      await prisma.medication.deleteMany({ where: { userId } })
+      const localIds = meds.map(m => m.id)
 
-      const created: { localId: string; dbId: string }[] = []
+      // 로컬에 없는 약은 DB에서 삭제 (로그도 cascade 삭제)
+      if (localIds.length > 0) {
+        await prisma.medication.deleteMany({
+          where: {
+            userId,
+            id: { notIn: localIds },
+          },
+        })
+      } else {
+        // 로컬에 약이 없으면 DB도 비움
+        await prisma.medication.deleteMany({ where: { userId } })
+      }
 
+      // 각 약을 upsert (있으면 업데이트, 없으면 생성)
       for (const m of meds) {
-        const med = await prisma.medication.create({
-          data: {
+        await prisma.medication.upsert({
+          where: { id: m.id },
+          update: {
+            name: m.name,
+            dosage: m.dosage,
+            scheduledTimes: m.scheduledTimes,
+            daysOfWeek: m.daysOfWeek,
+            color: m.color || '#4a90d9',
+          },
+          create: {
+            id: m.id,
             userId,
             name: m.name,
             dosage: m.dosage,
@@ -42,10 +60,9 @@ export async function POST(req: NextRequest) {
             color: m.color || '#4a90d9',
           },
         })
-        created.push({ localId: m.id, dbId: med.id })
       }
 
-      return NextResponse.json({ ok: true, count: meds.length, idMap: created })
+      return NextResponse.json({ ok: true, count: meds.length })
     }
 
     // 단건 등록
@@ -54,8 +71,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '필수 항목이 누락되었습니다' }, { status: 400 })
     }
 
-    const med = await prisma.medication.create({
-      data: {
+    const med = await prisma.medication.upsert({
+      where: { id: id || 'new' },
+      update: { name, dosage, scheduledTimes, daysOfWeek, color },
+      create: {
+        id: id || undefined,
         userId,
         name,
         dosage,

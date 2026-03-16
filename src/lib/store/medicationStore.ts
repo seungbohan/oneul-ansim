@@ -6,29 +6,16 @@ import { Medication, MedicationLog } from '@/types'
 import { generateId } from '@/lib/utils/id'
 import { getTodayString } from '@/lib/utils/formatters'
 
-// DB 동기화: 약 목록을 DB에 보내고, DB에서 생성된 ID 매핑을 받아 로컬 ID 업데이트
-async function syncMedicationsToDb(
-  medications: Medication[],
-  updateIds: (idMap: { localId: string; dbId: string }[]) => void
-) {
-  try {
-    const res = await fetch('/api/medications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sync: true, medications }),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      if (data.idMap && data.idMap.length > 0) {
-        updateIds(data.idMap)
-      }
-    }
-  } catch {
-    // 오프라인이면 무시, 로컬은 유지
-  }
+// DB에 약 목록 동기화 (upsert 방식, 로그 보존)
+function syncToDb(medications: Medication[]) {
+  fetch('/api/medications', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sync: true, medications }),
+  }).catch(() => {})
 }
 
-// 복용 기록 DB 동기화
+// 복용 기록 DB 동기화 (로컬 ID = DB UUID)
 function syncLogToDb(medicationId: string, scheduledTime: string, date: string, takenAt: string) {
   fetch('/api/medications/log', {
     method: 'POST',
@@ -40,8 +27,6 @@ function syncLogToDb(medicationId: string, scheduledTime: string, date: string, 
 type MedicationState = {
   medications: Medication[]
   logs: MedicationLog[]
-  // ID 매핑 저장 (로컬ID → DB UUID)
-  dbIdMap: Record<string, string>
   addMedication: (med: Omit<Medication, 'id' | 'createdAt'>) => void
   removeMedication: (id: string) => void
   markAsTaken: (medicationId: string, scheduledTime: string) => void
@@ -57,7 +42,6 @@ export const useMedicationStore = create<MedicationState>()(
     (set, get) => ({
       medications: [],
       logs: [],
-      dbIdMap: {},
 
       addMedication: (med) => {
         const newMed: Medication = {
@@ -66,13 +50,12 @@ export const useMedicationStore = create<MedicationState>()(
           createdAt: new Date().toISOString(),
         }
         set(state => ({ medications: [...state.medications, newMed] }))
-        // DB 동기화
-        setTimeout(() => get().syncToDb(), 100)
+        setTimeout(() => syncToDb([...get().medications]), 100)
       },
 
       removeMedication: (id) => {
         set(state => ({ medications: state.medications.filter(m => m.id !== id) }))
-        setTimeout(() => get().syncToDb(), 100)
+        setTimeout(() => syncToDb(get().medications), 100)
       },
 
       markAsTaken: (medicationId, scheduledTime) => {
@@ -95,11 +78,8 @@ export const useMedicationStore = create<MedicationState>()(
         }
         set(state => ({ logs: [...state.logs, log] }))
 
-        // DB에 복용 기록: DB medication ID 사용
-        const dbId = get().dbIdMap[medicationId]
-        if (dbId) {
-          syncLogToDb(dbId, scheduledTime, today, takenAt)
-        }
+        // 로컬 ID = DB UUID이므로 바로 전송
+        syncLogToDb(medicationId, scheduledTime, today, takenAt)
       },
 
       getTodayLogs: () => {
@@ -126,20 +106,12 @@ export const useMedicationStore = create<MedicationState>()(
         }))
       },
 
-      resetStore: () => {
-        set({ medications: [], logs: [], dbIdMap: {} })
+      syncToDb: () => {
+        syncToDb(get().medications)
       },
 
-      syncToDb: () => {
-        const { medications } = get()
-        syncMedicationsToDb(medications, (idMap) => {
-          // 로컬ID → DB UUID 매핑 저장
-          const newMap: Record<string, string> = {}
-          for (const { localId, dbId } of idMap) {
-            newMap[localId] = dbId
-          }
-          set({ dbIdMap: newMap })
-        })
+      resetStore: () => {
+        set({ medications: [], logs: [] })
       },
     }),
     {
@@ -148,7 +120,7 @@ export const useMedicationStore = create<MedicationState>()(
         state?.cleanOldLogs()
         // 앱 시작 시 DB 동기화
         if (state?.medications && state.medications.length > 0) {
-          setTimeout(() => state.syncToDb(), 500)
+          setTimeout(() => syncToDb(state.medications), 500)
         }
       },
     }
