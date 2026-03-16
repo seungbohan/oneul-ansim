@@ -10,7 +10,6 @@ const elderTabs = [
   { href: '/weather', icon: '🌤️', label: '날씨' },
   { href: '/bus', icon: '🚌', label: '버스' },
   { href: '/facilities', icon: '📍', label: '주변' },
-  { href: '/chat', icon: '💬', label: '대화' },
 ]
 
 const guardianTabs = [
