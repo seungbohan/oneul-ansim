@@ -1,26 +1,249 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafaf8;
+  --foreground: #1a1a2e;
+  --primary: #2d5a27;
+  --primary-light: #e8f5e3;
+  --primary-dark: #1e3d1a;
+  --danger: #e8573d;
+  --danger-light: #fde8e4;
+  --warning: #d4911e;
+  --warning-light: #fef5e0;
+  --info: #4a90d9;
+  --info-light: #e3f0fc;
+  --card: #ffffff;
+  --border: #d5d5d0;
+  --muted: #6b6b6b;
+  --success: #2d5a27;
+  --success-light: #e8f5e3;
+
+  /* Safe area insets */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-danger: var(--danger);
+  --color-danger-light: var(--danger-light);
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-info: var(--info);
+  --color-info-light: var(--info-light);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ===== 기본 리셋 ===== */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 18px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Noto Sans KR', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(80px + var(--safe-area-bottom));
+  padding-top: var(--safe-area-top);
+  min-height: 100dvh;
+}
+
+/* ===== 인터랙티브 요소 기본 스타일 ===== */
+button, a {
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, select, textarea {
+  font-size: 18px;
+}
+
+/* ===== 포커스 스타일 (키보드 접근성) ===== */
+/* 마우스 클릭 시 포커스 링 숨김, 키보드 탭 시 표시 */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 버튼, 카드 등 둥근 요소의 포커스 링도 둥글게 */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 16px;
+}
+
+/* ===== 스크롤바 스타일 (두껍고 잡기 쉽게) ===== */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+  border: 2px solid var(--background);
+  min-height: 48px; /* 잡기 쉽도록 최소 높이 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Firefox 스크롤바 */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: var(--border) var(--background);
+}
+
+/* ===== 선택 불가능 영역 ===== */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ===== 슬라이드업 애니메이션 (모달 등) ===== */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* 스켈레톤 로딩 애니메이션 */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* 토스트 슬라이드 다운 (위에서 아래로) */
+@keyframes toast-slide-down {
+  from {
+    transform: translateY(-100%) translateX(-50%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) translateX(-50%);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-up {
+  from {
+    transform: translateY(0) translateX(-50%);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%) translateX(-50%);
+    opacity: 0;
+  }
+}
+
+/* 펄스 애니메이션 (긴급 버튼 등) */
+@keyframes gentle-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(232, 87, 61, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(232, 87, 61, 0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.animate-skeleton-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.animate-toast-in {
+  animation: toast-slide-down 0.3s ease-out forwards;
+}
+
+.animate-toast-out {
+  animation: toast-slide-up 0.3s ease-in forwards;
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+/* ===== 안전한 영역 대응 유틸리티 ===== */
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.safe-area-top {
+  padding-top: var(--safe-area-top);
 }

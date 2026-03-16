@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email          String              @unique
+  name           String
+  mode           String
+  phone          String?
+  region         String?             @default("daegu")
+  isOnboarded    Boolean?            @default(false) @map("is_onboarded")
+  createdAt      DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime?           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  password       String              @default("")
+  elderLinks     ElderGuardianLink[] @relation("ElderLinks")
+  guardianLinks  ElderGuardianLink[] @relation("GuardianLinks")
+  medicationLogs MedicationLog[]
+  medications    Medication[]
+
+  @@map("users")
+}
+
+model Medication {
+  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId         String          @map("user_id") @db.Uuid
+  name           String
+  dosage         String
+  scheduledTimes String[]        @map("scheduled_times")
+  daysOfWeek     Int[]           @default([0, 1, 2, 3, 4, 5, 6]) @map("days_of_week")
+  color          String?         @default("#4a90d9")
+  createdAt      DateTime?       @default(now()) @map("created_at") @db.Timestamptz(6)
+  logs           MedicationLog[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId], map: "idx_medications_user")
+  @@map("medications")
+}
+
+model MedicationLog {
+  id            String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId        String     @map("user_id") @db.Uuid
+  medicationId  String     @map("medication_id") @db.Uuid
+  scheduledTime String     @map("scheduled_time")
+  takenAt       DateTime?  @map("taken_at") @db.Timestamptz(6)
+  date          DateTime   @db.Date
+  createdAt     DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
+  medication    Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([medicationId, scheduledTime, date])
+  @@index([userId, date], map: "idx_medication_logs_user_date")
+  @@map("medication_logs")
+}
+
+model ElderGuardianLink {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  elderId    String    @map("elder_id") @db.Uuid
+  guardianId String?   @map("guardian_id") @db.Uuid
+  status     String    @default("pending")
+  inviteCode String?   @unique @map("invite_code")
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  elder      User      @relation("ElderLinks", fields: [elderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  guardian   User?     @relation("GuardianLinks", fields: [guardianId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([elderId, guardianId])
+  @@index([elderId], map: "idx_links_elder")
+  @@index([guardianId], map: "idx_links_guardian")
+  @@index([inviteCode], map: "idx_links_invite_code")
+  @@map("elder_guardian_links")
+}

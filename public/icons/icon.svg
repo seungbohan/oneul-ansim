@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 둥근 사각형 배경 -->
+  <rect width="512" height="512" rx="96" ry="96" fill="#2d5a27"/>
+
+  <!-- 방패 아이콘 -->
+  <path d="M256 100 C256 100 140 140 140 140 L140 260 C140 340 200 400 256 430 C312 400 372 340 372 260 L372 140 Z" fill="#e8f5e3" opacity="0.25"/>
+  <path d="M256 120 C256 120 155 155 155 155 L155 260 C155 330 205 385 256 412 C307 385 357 330 357 260 L357 155 Z" fill="none" stroke="white" stroke-width="8"/>
+
+  <!-- 하트 -->
+  <path d="M256 310 C230 280 200 260 200 230 C200 210 215 195 235 195 C248 195 256 205 256 205 C256 205 264 195 277 195 C297 195 312 210 312 230 C312 260 282 280 256 310 Z" fill="white"/>
+
+  <!-- 안심 텍스트 -->
+  <text x="256" y="460" text-anchor="middle" fill="white" font-family="sans-serif" font-weight="700" font-size="72">안심</text>
+</svg>
